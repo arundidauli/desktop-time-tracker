@@ -31,146 +31,360 @@ $ flutter run --flavor staging --target lib/main_staging.dart
 $ flutter run --flavor production --target lib/main_production.dart
 ```
 
-_\*Tracker works on iOS, Android, Web, and Windows._
+````markdown
+# ⏱️ Desktop Time Tracker (Flutter • BLoC • Windows/macOS/Linux)
+
+[![Flutter](https://img.shields.io/badge/Flutter-Desktop-blue)](#)
+[![BLoC](https://img.shields.io/badge/State%20Mgmt-BLoC-7b3fe4)](#)
+[![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20macOS%20%7C%20Linux-informational)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+A **cross-platform desktop app** for **time tracking**, **automatic screenshots**, and **activity monitoring**, built with **Flutter** and the **BLoC** architecture.  
+Ideal for freelancers, teams, and anyone who needs reliable activity reporting.
 
 ---
 
-## Running Tests 🧪
+## 📸 Screenshots
 
-To run all unit and widget tests use the following command:
+> Put your images in a `screenshots/` folder at the repo root. Example filenames used below:
+>
+> ```
+> screenshots/
+> ├─ dashboard.png
+> ├─ weekly_report.png
+> └─ alert.png
+> ```
 
-```sh
-$ flutter test --coverage --test-randomize-ordering-seed random
+| Dashboard | Weekly Report | Activity Alert |
+|-----------|---------------|----------------|
+| ![Dashboard](screenshots/dashboard.png) | ![Weekly Report](screenshots/weekly_report.png) | ![Activity Alert](screenshots/alert.png) |
+
+---
+
+## 🧭 Table of Contents
+
+- [Features](#-features)
+- [Getting Started](#-getting-started)
+- [Usage](#-usage)
+- [Configuration](#-configuration)
+- [Architecture](#-architecture-bloc)
+- [Project Structure](#-project-structure)
+- [Database](#-database)
+- [Build & Release](#-build--release)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## ✨ Features
+
+- 🧩 **BLoC Architecture** — clean separation of UI and business logic
+- ▶️ **Time Tracking** — Start/Stop sessions with precise duration
+- 🖼️ **Screenshots** — Auto-capture every **15 minutes**
+- 🖱️ **Activity Monitoring** — detects **keyboard/mouse inactivity**, alerts after **30 minutes**
+- 💾 **SQLite Storage** — sessions & screenshots saved locally
+- 📊 **Weekly Reports** — historical timeline + total hours per week
+- 🖥️ **Cross-Platform** — Windows, macOS, Linux
+
+---
+
+## 🚀 Getting Started
+
+### 1) Prerequisites
+- Flutter (stable channel) installed  
+- Desktop support enabled:
+  ```bash
+  flutter config --enable-windows-desktop
+  flutter config --enable-macos-desktop
+  flutter config --enable-linux-desktop
+  flutter doctor -v
+````
+
+### 2) Install dependencies
+
+```bash
+flutter pub get
 ```
 
-To view the generated coverage report you can use [lcov](https://github.com/linux-test-project/lcov).
+### 3) Run the app
 
-```sh
-# Generate Coverage Report
-$ genhtml coverage/lcov.info -o coverage/
+```bash
+# Windows
+flutter run -d windows
 
-# Open Coverage Report
-$ open coverage/index.html
+# macOS
+flutter run -d macos
+
+# Linux
+flutter run -d linux
 ```
 
 ---
 
-## Working with Translations 🌐
+## 🕹️ Usage
 
-This project relies on [flutter_localizations][flutter_localizations_link] and follows the [official internationalization guide for Flutter][internationalization_link].
+1. **Click “Start”** to begin tracking a session
+2. App **automatically takes screenshots** every **15 minutes**
+3. **Activity monitor** tracks keyboard/mouse; an **inactivity alert** triggers after **30 minutes**
+4. **Click “Stop”** to end the session (duration is saved)
+5. Open **“Weekly Report”** to view historical sessions, screenshots, and total hours
 
-### Adding Strings
+---
 
-1. To add a new localizable string, open the `app_en.arb` file at `lib/l10n/arb/app_en.arb`.
+## ⚙️ Configuration
 
-```arb
-{
-    "@@locale": "en",
-    "counterAppBarTitle": "Counter",
-    "@counterAppBarTitle": {
-        "description": "Text shown in the AppBar of the Counter Page"
-    }
-}
-```
+Default timing:
 
-2. Then add a new key/value and description
+* **Screenshot Interval:** `15 minutes`
+* **Inactivity Threshold:** `30 minutes`
 
-```arb
-{
-    "@@locale": "en",
-    "counterAppBarTitle": "Counter",
-    "@counterAppBarTitle": {
-        "description": "Text shown in the AppBar of the Counter Page"
-    },
-    "helloWorld": "Hello World",
-    "@helloWorld": {
-        "description": "Hello World Text"
-    }
-}
-```
-
-3. Use the new string
+> If your project already has config files/constants, update them there. If not, you can introduce a simple config like this:
 
 ```dart
-import 'package:tracker/l10n/l10n.dart';
-
-@override
-Widget build(BuildContext context) {
-  final l10n = context.l10n;
-  return Text(l10n.helloWorld);
+// lib/core/config/tracking_config.dart
+class TrackingConfig {
+  static const Duration screenshotInterval = Duration(minutes: 15);
+  static const Duration inactivityThreshold = Duration(minutes: 30);
 }
 ```
 
-### Adding Supported Locales
+Use it in services:
 
-Update the `CFBundleLocalizations` array in the `Info.plist` at `ios/Runner/Info.plist` to include the new locale.
+```dart
+// lib/services/screenshot_service.dart
+final interval = TrackingConfig.screenshotInterval;
 
-```xml
-    ...
-
-    <key>CFBundleLocalizations</key>
-	<array>
-		<string>en</string>
-		<string>es</string>
-	</array>
-
-    ...
+// lib/services/activity_monitor.dart
+final threshold = TrackingConfig.inactivityThreshold;
 ```
 
-### Adding Translations
+Platform notes:
 
-1. For each supported locale, add a new ARB file in `lib/l10n/arb`.
+* **Windows/macOS/Linux:** screenshot is taken via **platform-specific commands/APIs**.
+* For **more accurate activity detection**, consider native plugins per OS (e.g., low-level keyboard/mouse hooks).
 
-```
-├── l10n
-│   ├── arb
-│   │   ├── app_en.arb
-│   │   └── app_es.arb
-```
+---
 
-2. Add the translated strings to each `.arb` file:
+## 🏗️ Architecture (BLoC)
 
-`app_en.arb`
+The app follows a layered approach:
 
-```arb
-{
-    "@@locale": "en",
-    "counterAppBarTitle": "Counter",
-    "@counterAppBarTitle": {
-        "description": "Text shown in the AppBar of the Counter Page"
-    }
+* **Presentation**: Flutter UI + Widgets
+* **Application**: BLoCs/Cubits (events → states)
+* **Domain**: Use cases (business rules) *(optional layer)*
+* **Data**: Repositories & data sources (SQLite, platform services)
+
+Example BLoC interfaces:
+
+```dart
+// lib/blocs/tracking/tracking_event.dart
+sealed class TrackingEvent {}
+class StartTracking extends TrackingEvent {}
+class StopTracking extends TrackingEvent {}
+class InactivityDetected extends TrackingEvent {}
+class ActivityResumed extends TrackingEvent {}
+class ScreenshotCaptured extends TrackingEvent {
+  final String path;
+  ScreenshotCaptured(this.path);
+}
+
+// lib/blocs/tracking/tracking_state.dart
+sealed class TrackingState {}
+class TrackingIdle extends TrackingState {}
+class TrackingRunning extends TrackingState {
+  final DateTime startedAt;
+  final Duration elapsed;
+  final List<String> screenshots;
+  final bool inactive;
+  TrackingRunning({
+    required this.startedAt,
+    required this.elapsed,
+    required this.screenshots,
+    required this.inactive,
+  });
 }
 ```
 
-`app_es.arb`
+---
 
-```arb
-{
-    "@@locale": "es",
-    "counterAppBarTitle": "Contador",
-    "@counterAppBarTitle": {
-        "description": "Texto mostrado en la AppBar de la página del contador"
-    }
-}
+## 📂 Project Structure
+
+```
+lib/
+├─ blocs/
+│  ├─ tracking/
+│  │  ├─ tracking_bloc.dart
+│  │  ├─ tracking_event.dart
+│  │  └─ tracking_state.dart
+│  ├─ report/
+│  │  ├─ report_cubit.dart
+│  │  └─ report_state.dart
+│  └─ activity/
+│     ├─ activity_cubit.dart
+│     └─ activity_state.dart
+│
+├─ core/
+│  ├─ config/
+│  │  └─ tracking_config.dart
+│  └─ utils/
+│     └─ time_format.dart
+│
+├─ data/
+│  ├─ models/
+│  │  ├─ session.dart
+│  │  └─ screenshot.dart
+│  ├─ repositories/
+│  │  └─ tracking_repository.dart
+│  └─ datasources/
+│     └─ local_db.dart
+│
+├─ services/
+│  ├─ screenshot_service.dart
+│  └─ activity_monitor.dart
+│
+├─ ui/
+│  ├─ screens/
+│  │  ├─ dashboard_screen.dart
+│  │  ├─ weekly_report_screen.dart
+│  │  └─ settings_screen.dart
+│  └─ widgets/
+│     ├─ start_stop_button.dart
+│     ├─ session_tile.dart
+│     └─ screenshot_viewer.dart
+│
+└─ main.dart
 ```
 
-### Generating Translations
+---
 
-To use the latest translations changes, you will need to generate them:
+## 🗄️ Database
 
-1. Generate localizations for the current project:
+SQLite is used for persistent storage.
 
-```sh
-flutter gen-l10n --arb-dir="lib/l10n/arb"
+**Tables (suggested):**
+
+* `sessions`
+
+  * `id` (PK)
+  * `start_at` (datetime)
+  * `end_at` (datetime, nullable while running)
+  * `duration_secs` (int)
+* `screenshots`
+
+  * `id` (PK)
+  * `session_id` (FK → sessions.id)
+  * `path` (text)
+  * `captured_at` (datetime)
+
+Example schema snippet:
+
+```sql
+CREATE TABLE IF NOT EXISTS sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  start_at TEXT NOT NULL,
+  end_at TEXT,
+  duration_secs INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS screenshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL,
+  path TEXT NOT NULL,
+  captured_at TEXT NOT NULL,
+  FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+);
 ```
 
-Alternatively, run `flutter run` and code generation will take place automatically.
+---
 
-[coverage_badge]: coverage_badge.svg
-[flutter_localizations_link]: https://api.flutter.dev/flutter/flutter_localizations/flutter_localizations-library.html
-[internationalization_link]: https://flutter.dev/docs/development/accessibility-and-localization/internationalization
-[license_badge]: https://img.shields.io/badge/license-MIT-blue.svg
-[license_link]: https://opensource.org/licenses/MIT
-[very_good_analysis_badge]: https://img.shields.io/badge/style-very_good_analysis-B22C89.svg
-[very_good_analysis_link]: https://pub.dev/packages/very_good_analysis
-[very_good_cli_link]: https://github.com/VeryGoodOpenSource/very_good_cli
+## 📦 Build & Release
+
+```bash
+# Windows
+flutter build windows
+
+# macOS
+flutter build macos
+
+# Linux
+flutter build linux
+```
+
+Artifacts:
+
+* **Windows:** `build/windows/runner/Release/`
+* **macOS:** `build/macos/Build/Products/Release/`
+* **Linux:** `build/linux/x64/release/bundle/`
+
+> Note: macOS builds may require code signing settings; Linux builds may need extra GTK/GLib dependencies depending on distro.
+
+---
+
+## 🧰 Troubleshooting
+
+* **Screenshots not saving**
+
+  * Check write permissions to the target directory
+  * Verify the platform command/API used for capture
+* **No inactivity alerts**
+
+  * Desktop event hooks may vary; consider native plugins for accurate input hooks
+* **App won’t run on desktop**
+
+  * Ensure desktop support is enabled (`flutter config …`)
+  * Run `flutter doctor -v` and resolve issues
+* **High CPU usage**
+
+  * Verify timers/streams are disposed in BLoCs/services
+  * Throttle screenshot capture to your configured interval
+
+---
+
+## 🤝 Contributing
+
+1. **Fork** the repo
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. **Commit** your changes: `git commit -m "feat: add X"`
+4. **Push** to the branch: `git push origin feature/your-feature`
+5. Open a **Pull Request** 🎉
+
+Coding style:
+
+* Follow **Effective Dart** guidelines
+* Keep logic inside **BLoC/Repository**, keep UI dumb
+* Add tests for core logic where possible
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+---
+
+## ✅ Quick Commands Recap
+
+```bash
+flutter pub get
+flutter run -d windows   # or -d macos / -d linux
+flutter build windows    # or build macos / build linux
+```
+
+**Default behavior**
+
+* Screenshots: every **15 min**
+* Inactivity alert: after **30 min**
+* Weekly report: sessions + totals by week
+
+---
+
+## 🙌 Acknowledgements
+
+* Flutter team & community
+* BLoC library maintainers
+* SQLite & the sqflite ecosystem
+
+```
+```
+
