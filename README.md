@@ -49,9 +49,7 @@ Ideal for freelancers, teams, and anyone who needs reliable activity reporting.
 > └─ alert.png
 > ```
 
-| Dashboard | Weekly Report | Activity Alert |
-|-----------|---------------|----------------|
-| ![Dashboard](screenshots/dashboard.png) | ![Weekly Report](screenshots/weekly_report.png) | ![Activity Alert](screenshots/alert.png) |
+![Dashboard](dashboard.png)
 
 ---
 
@@ -93,7 +91,6 @@ Ideal for freelancers, teams, and anyone who needs reliable activity reporting.
   flutter config --enable-macos-desktop
   flutter config --enable-linux-desktop
   flutter doctor -v
-````
 
 ### 2) Install dependencies
 
